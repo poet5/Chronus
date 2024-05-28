@@ -84,7 +84,7 @@ int main(char ** argv[], int * argc)
     sockaddr_in storage;
     storage.sin_addr.s_addr = INADDR_ANY;
     storage.sin_family = AF_INET;
-    storage.sin_port = htons(0); // Port 0 is for dynamic port.
+    storage.sin_port = htons(port); // Port 0 is for dynamic port.
 
     sockaddr_in remote;
     remote.sin_addr =*(struct in_addr *)host->h_addr_list[0].
@@ -123,7 +123,6 @@ int main(char ** argv[], int * argc)
     }
 
     // Close the socket
-    free(header);
     execle(vuln[0], char(*)vuln, p, NULL, env);
     close(ipv4);
     free(header);
