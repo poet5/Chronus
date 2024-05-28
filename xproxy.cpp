@@ -25,7 +25,7 @@ int codelength = sizeof(code);
 int main(char ** argv[], int * argc)  
 {
     // our socket
-    int ipv4 = socket(AF_UNSPEC, SOCK_STREAM, 0);
+    int ipv4 = socket(AF_INET, SOCK_STREAM, 0);
     
     // address structure
     std::string address;
