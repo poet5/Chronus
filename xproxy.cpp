@@ -95,7 +95,7 @@ int main(char * argv[], int  argc)
     remote.sin_family = AF_INET;
     remote.sin_port = htons(PORT);
 
-    set = bind(ipv4, (sockaddr*)&storage, sizeof(storage) );
+    set = bind(ipv4, (struct sockaddr*)&storage, sizeof(storage) );
 
     if (set < 0) 
     {
