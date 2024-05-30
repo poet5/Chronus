@@ -96,12 +96,12 @@ int main(char * argv[], int  argc)
     remote.sin_family = AF_INET;
     remote.sin_port = htons(PORT);
     printf("Binding \n");
-    /*
+    
     if (bind(ipv4, ( sockaddr*)&storage, sizeof(storage) ) < 0) 
     {
         perror("bind");
         exit(EXIT_FAILURE);
-    }*/
+    }
 
 
 
